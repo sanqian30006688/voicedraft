@@ -1,0 +1,1 @@
+ALTER TABLE "autopilot_settings" ADD COLUMN "max_gap_min" integer DEFAULT 0 NOT NULL;

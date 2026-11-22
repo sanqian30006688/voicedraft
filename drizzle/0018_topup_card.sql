@@ -1,0 +1,1 @@
+ALTER TABLE "topups" ADD COLUMN "tg_message_id" integer;
