@@ -6,4 +6,4 @@
 
 - 线上必须设置 `TOKEN_ENCRYPTION_KEY`、`CRON_SECRET`、`TELEGRAM_WEBHOOK_SECRET`（至少 16 位随机字符）和 `ADMIN_EMAILS`。
 - 不要把 `.env*`、`.data/` 提交到仓库；密钥泄露后请立刻去对应平台轮换。
-- 限流按请求头里的来访 IP 计算，请只在可信的反向代理后面部署。
+- 限流按 x-forwarded-for 从右往左数的 IP 计算，默认前面有 1 层可信代理；多一层（例如 Cloudflare）就设 `TRUSTED_PROXY_HOPS=2`。直接暴露在公网、没有代理时请先在前面加一层代理。
