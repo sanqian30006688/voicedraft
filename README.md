@@ -1,10 +1,14 @@
 # VoiceDraft（推特助手）
 
-学习用户本人写作风格、辅助起草推文的 Web 应用。产品文档见 [docs/VoiceDraft_PRD_v0.2.md](docs/VoiceDraft_PRD_v0.2.md)。
+学会你本人的写作风格，帮你在 X（推特）上起草、发布、回复的开源 Web 应用，大部分操作也可以在 Telegram 机器人里点按钮完成。
 
-**这是免费的开源自托管版**（MIT 许可证，见 [LICENSE](LICENSE)）：自己部署、自己填各家 API 密钥，所有功能免费使用，没有按次计费、没有充值。数据都在你自己的机器 / 数据库里。
+**免费的开源自托管版**（[MIT 许可证](LICENSE)）：自己部署、自己填各家 API 密钥，所有功能免费使用，没有按次计费，没有充值。数据都在你自己的机器或数据库里。
 
-当前进度：**M5 进行中**（账号、素材、风格卡、起草、草稿箱、学习建议、风格盲测、连接 X 发布与回复）。
+- 只用 X 官方 API，不抓取 X；发布前由你确认，不做私信、关注、点赞、转推。
+- 技术栈：Next.js、Drizzle、Postgres（本地用 PGlite，不用装数据库）、Claude API。
+- 第一次使用：先看下面的「本地运行」，不填任何密钥也能进演示模式看界面。
+
+文档：[产品说明 v0.2](docs/VoiceDraft_PRD_v0.2.md) · [安全说明](SECURITY.md) · [参与贡献](CONTRIBUTING.md)
 
 ## 已有功能
 
@@ -48,6 +52,18 @@ npm run dev                  # 打开 http://localhost:3000
 
 没有配置 `DATABASE_URL` 时，数据保存在项目里的 `.data` 文件夹（PGlite），本地运行不需要安装数据库。上线时填 Neon 等 Postgres 的连接串即可。数据表结构变更会在启动后自动迁移。
 
+## 部署到服务器
+
+任何能跑 Docker 的平台都行（仓库里有 `Dockerfile`，`railway.json` 是 Railway 的示例配置）。上线前请务必设置：
+
+- `DATABASE_URL`（Postgres 连接串）
+- `TOKEN_ENCRYPTION_KEY`（加密 X 令牌用，丢了令牌就读不出来）
+- `ADMIN_EMAILS`（管理员邮箱，不设时最早注册的账号是管理员）
+- `CRON_SECRET`、`TELEGRAM_WEBHOOK_SECRET`（至少 16 位随机字符，用 TG 机器人时需要）
+- `PUBLIC_URL`、`X_REDIRECT_URI`（你的公开网址，X 开发者后台的回调地址要一致）
+
+`.data/` 和 `.env*` 不要提交到仓库。服务前面有几层反向代理要告诉程序（`TRUSTED_PROXY_HOPS`），详见 [SECURITY.md](SECURITY.md)。
+
 ## 环境变量
 
 | 变量 | 说明 |
@@ -60,6 +76,7 @@ npm run dev                  # 打开 http://localhost:3000
 | `X_REDIRECT_URI` | 可选，默认 `http://127.0.0.1:3000/api/x/callback`，需与开发者后台一致 |
 | `X_MOCK` | 设为 `1` 时用模拟 X 账号，不会真的发帖 |
 | `TOKEN_ENCRYPTION_KEY` | 加密 X 令牌的密钥；本地不填会自动生成在 `.data/secret.key`，线上必须填 |
+| `TRUSTED_PROXY_HOPS` | 可选，前面有几层可信反向代理，默认 1 |
 | `CRON_SECRET` | 线上部署时 Cron 调用 `/api/cron/tick` 用的密钥 |
 | `TELEGRAM_BOT_TOKEN` | 平台共享 TG 机器人的 Token（@BotFather 创建）；也可在「灵感」页粘贴保存 |
 | `TELEGRAM_WEBHOOK` / `TELEGRAM_WEBHOOK_SECRET` | 线上部署时设 `TELEGRAM_WEBHOOK=1` 改用 webhook（`/api/telegram/webhook`），本机默认用长轮询，不需要公网地址 |

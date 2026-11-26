@@ -116,11 +116,21 @@ export function fmtWait(ms: number): string {
   return `${Math.ceil(m / 60)} 小时`;
 }
 
-/** 请求方 IP：线上一般在反向代理加的请求头里；本机直接打开时没有，统一算作一个来源 */
+/**
+ * 请求方 IP。x-forwarded-for 最左边的值是客户端自己填的，可以伪造，不能拿来限流；
+ * 每一层可信代理都会把它看到的来源 IP 追加到最右边，所以从右往左数：
+ * 默认只有 1 层代理（TRUSTED_PROXY_HOPS=1，取最右一个）；前面再套了 Cloudflare 等就设成 2。
+ * 不信任 cf-connecting-ip / x-real-ip（没有代理改写时同样能被伪造）。
+ * 本机直接打开时没有这个头，统一算作一个来源。
+ */
 export function clientIp(request: Request): string {
-  const h = request.headers;
-  const fwd = h.get("cf-connecting-ip") ?? h.get("x-real-ip") ?? h.get("x-forwarded-for")?.split(",")[0];
-  return fwd?.trim().slice(0, 64) || "direct";
+  const parts = (request.headers.get("x-forwarded-for") ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (!parts.length) return "direct";
+  const hops = Math.max(1, Math.floor(Number(process.env.TRUSTED_PROXY_HOPS) || 1));
+  return parts[Math.max(0, parts.length - hops)].slice(0, 64);
 }
 
 export function tooMany(message: string, retryAfterMs: number) {
